@@ -7,7 +7,7 @@ extern crate rocket;
 // note: should accept ANY image type
 // might depend on the tool used to do the pattern matching instead of at the data layer
 #[derive(FromForm)]
-struct WfScreenshot<'r> {
+struct IncomingWfScreenshot<'r> {
     // image object here
     #[field(name = "image")]
     img: TempFile<'r>,
@@ -24,8 +24,8 @@ struct Passive {
 // note: should return array of results of names maybe
 // or objects giving more info on each of the passives found
 #[post("/find-passives-from-ss", data = "<form>")]
-async fn upload_image(mut form: Form<WfScreenshot<'_>>) -> std::io::Result<()> {
-    form.img.persist_to("/tmp/complete/file.png").await?;
+async fn upload_image(mut form: Form<IncomingWfScreenshot<'_>>) -> std::io::Result<()> {
+    form.img.persist_to("./file.png").await?;
     Ok(())
 }
 
@@ -36,7 +36,6 @@ fn index() -> &'static str {
 
 #[launch]
 fn rocket() -> _ {
-    println!(env!("CARGO_MANIFEST_DIR"));
     rocket::build().mount("/", routes![index, upload_image])
 }
 
@@ -47,15 +46,11 @@ mod tests {
         http::{ContentType, Status},
         local::blocking::Client,
     };
-    use std::{
-        fs::File,
-        io::{BufReader, Read},
-    };
 
     #[test]
-    fn file_is_saved() {
-        let mut img: String = "";
-        let reader = BufReader::new(File::open("test/first.png").unwrap());
+    fn file_is_saved() -> anyhow::Result<()> {
+        let img = image::io::Reader::open("myimage.png")?.decode().unwrap();
+        // let reader = BufReader::open(File::open("test/first.png").unwrap()).;
 
         let mut client = Client::tracked(rocket()).unwrap();
 
@@ -65,9 +60,13 @@ mod tests {
             // up to here correct
             //
             // need to do special things here
+            //
+            // something to do with boundaries not sure
             .body(img);
 
         let response = req.dispatch();
         assert_eq!(response.status(), Status::Ok);
+
+        Ok(())
     }
 }
