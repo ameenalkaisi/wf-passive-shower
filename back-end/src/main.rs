@@ -26,12 +26,13 @@ struct Passive {
 #[post("/find-passives-from-ss", data = "<form>")]
 async fn upload_image(mut form: Form<IncomingWfScreenshot<'_>>) -> std::io::Result<()> {
     form.img.persist_to("./file.png").await?;
+
     Ok(())
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index, upload_image])
+    rocket::build().mount("/", routes![upload_image])
 }
 
 #[cfg(test)]
