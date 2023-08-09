@@ -1,3 +1,5 @@
+mod image_detection;
+
 use rocket::{form::Form, fs::TempFile};
 
 #[macro_use]
@@ -9,6 +11,7 @@ extern crate rocket;
 #[derive(FromForm)]
 struct IncomingWfScreenshot<'r> {
     // image object here
+    // see if there is anything you can do to data gaurd into an actual image
     #[field(name = "image")]
     img: TempFile<'r>,
 }
