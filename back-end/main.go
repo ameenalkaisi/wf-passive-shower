@@ -1,23 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
 
-var db = make(map[string]string)
-
 func SetupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
-	// Ping test
 	r.POST("/analyze-wf-ss", func(c *gin.Context) {
-		file, err := c.FormFile("file")
-		// The file cannot be received.
+		screenshotFile, err := c.FormFile("screenshot")
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"message": "No file is received",
@@ -25,21 +22,34 @@ func SetupRouter() *gin.Engine {
 			return
 		}
 
+		// validate received file is an image
+		buff := make([]byte, 512) // docs tell that it take only first 512 bytes into consideration
+		if openedFile, err := screenshotFile.Open(); err != nil {
+			if _, err = openedFile.Read(buff); err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+
+		// todo, testing and needs more impl
+		fmt.Println(http.DetectContentType(buff))
+
 		// Retrieve file information
-		extension := filepath.Ext(file.Filename)
+		extension := filepath.Ext(screenshotFile.Filename)
 
 		// Generate random file name for the new uploaded file so it doesn't override the old file with same name
 		newFileName := "tempt" + extension
 
-		// The file is received, so let's save it
-		if err := c.SaveUploadedFile(file, "/some/path/on/server/"+newFileName); err != nil {
+		// Note: this for sure has parallelism issues if this method can run multiple times in a row
+		// at least due to file names not being unique it's just tempt right now
+		// todo
+		if err := c.SaveUploadedFile(screenshotFile, "./"+newFileName); err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 				"message": "Unable to save the file",
 			})
 			return
 		}
 
-		// File saved successfully. Return proper result
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Your file has been successfully uploaded.",
 		})
@@ -50,6 +60,6 @@ func SetupRouter() *gin.Engine {
 
 func main() {
 	r := SetupRouter()
-	// Listen and Server in 0.0.0.0:8080
+
 	r.Run(":8080")
 }
