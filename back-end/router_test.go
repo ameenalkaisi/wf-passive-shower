@@ -1,31 +1,55 @@
 package main
 
 import (
+	"bytes"
+	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// TestHelloEmpty calls greetings.Hello with an empty string,
-// checking for an error.
-func TestHelloEmpty(t *testing.T) {
-	r := SetupRouter()
-	// r.GET("/companies", GetCompaniesHandler)
-	req, _ := http.NewRequest("GET", "/companies", nil)
+// Test uploading image to server
+func TestUploadScreenshot(t *testing.T) {
+	// Create a buffer to store the request body
+	var buf bytes.Buffer
 
-	// do something here
-	multipart.NewWriter()
+	// Create a new multipart writer with the buffer
+	w := multipart.NewWriter(&buf)
 
-	// something with httptest
+	// Add a file to the request
+	file, err := os.Open("test/first.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
 
-	r.ServeHTTP(w, req)
+	// Create a new form field
+	fw, err := w.CreateFormFile("screenshot", "file.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// var companies []Company
-	// json.Unmarshal(w.Body.Bytes(), &companies)
+	// Copy the contents of the file to the form field
+	if _, err := io.Copy(fw, file); err != nil {
+		log.Fatal(err)
+	}
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	// assert.NotEmpty(t, companies)
+	// Close the multipart writer to finalize the request
+	w.Close()
+
+	req := httptest.NewRequest("POST", "http://localhost:8080/analyze-wf-ss", &buf)
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	// Send the request
+	router := SetupRouter()
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
 }
