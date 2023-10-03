@@ -19,7 +19,7 @@ func TestUploadScreenshot(t *testing.T) {
 	var buf bytes.Buffer
 
 	// Create a new multipart writer with the buffer
-	w := multipart.NewWriter(&buf)
+	multipartWriter := multipart.NewWriter(&buf)
 
 	// Add a file to the request
 	file, err := os.Open("test/first.png")
@@ -29,7 +29,7 @@ func TestUploadScreenshot(t *testing.T) {
 	defer file.Close()
 
 	// Create a new form field
-	fw, err := w.CreateFormFile("screenshot", "file.png")
+	fw, err := multipartWriter.CreateFormFile("screenshot", "file.png")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,10 +40,10 @@ func TestUploadScreenshot(t *testing.T) {
 	}
 
 	// Close the multipart writer to finalize the request
-	w.Close()
+	multipartWriter.Close()
 
 	req := httptest.NewRequest("POST", "http://localhost:8080/analyze-wf-ss", &buf)
-	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Content-Type", multipartWriter.FormDataContentType())
 
 	// Send the request
 	router := SetupRouter()

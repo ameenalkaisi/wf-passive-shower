@@ -32,7 +32,7 @@ func SetupRouter() *gin.Engine {
 		}
 
 		// todo, testing and needs more impl
-		fmt.Println(http.DetectContentType(buff))
+		fmt.Println("Content Type: " + http.DetectContentType(buff))
 
 		// Retrieve file information
 		extension := filepath.Ext(screenshotFile.Filename)
