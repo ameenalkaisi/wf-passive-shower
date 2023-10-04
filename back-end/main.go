@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
@@ -58,8 +60,23 @@ func SetupRouter() *gin.Engine {
 	return r
 }
 
+func ReverseProxy(c *gin.Context) {
+	remote, _ := url.Parse("http://localhost:3000")
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+	proxy.Director = func(req *http.Request) {
+		req.Header = c.Request.Header
+		req.Host = remote.Host
+		req.URL = c.Request.URL
+		req.URL.Scheme = remote.Scheme
+		req.URL.Host = remote.Host
+	}
+
+	proxy.ServeHTTP(c.Writer, c.Request)
+}
+
 func main() {
 	r := SetupRouter()
 
+	r.NoRoute(ReverseProxy)
 	r.Run(":8080")
 }
