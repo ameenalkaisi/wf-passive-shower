@@ -2,6 +2,10 @@
 
 import React from "react";
 
+interface ServerAnalyzeScreenshotResponse {
+  message: string;
+}
+
 export default function Home() {
   const inputFileRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -25,40 +29,17 @@ export default function Home() {
       const options: RequestInit = {
         method: "POST",
         body: formData,
-        // todo, look in depth on this
-        // mode: "no-cors",
-        headers: {
-          // "X-Content-Type-Options": "nosniff",
-          "Content-Type": "application/json",
-        },
       };
 
-      const res = await fetch(
-        process.env.NEXT_PUBLIC_API_URL + "/analyze-wf-ss",
-        options,
-      );
-
-      // handle the serverside error
-      if (!res.ok) {
-        res
-          .json()
-          .then((data) => console.log("here1" + JSON.stringify(data)))
-          .catch((e) => {
-            console.log(e);
-          });
-      } else {
-        res
-          .json()
-          .then(({ message }) => console.log("here2" + message))
-          .catch((e) => {
-            // console.log(e);
-            return;
-          });
-      }
+      fetch(process.env.NEXT_PUBLIC_API_URL + "/analyze-wf-ss", options)
+        .then((res) => res.json())
+        .then((data: ServerAnalyzeScreenshotResponse) => {
+          console.log(data.message);
+        })
+        .catch((err) => console.log(err));
     } catch (e: any) {
       // handle the fetching error
-      console.log("here3");
-      console.error(e);
+      console.log("Could not upload file");
     }
   };
 
