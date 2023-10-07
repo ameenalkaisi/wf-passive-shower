@@ -5,10 +5,13 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
+
+var frontendURL string = "http://localhost:3000"
 
 func SetupRouter() *gin.Engine {
 	// Disable Console Color
@@ -61,7 +64,12 @@ func SetupRouter() *gin.Engine {
 }
 
 func ReverseProxy(c *gin.Context) {
-	remote, _ := url.Parse("http://localhost:3000")
+	var usedFrontEndPort string = os.Getenv("FRONTEND_URL")
+	if usedFrontEndPort == "" {
+		usedFrontEndPort = frontendURL
+	}
+
+	remote, _ := url.Parse(usedFrontEndPort)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
